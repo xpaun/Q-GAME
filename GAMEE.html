@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>What's your name?</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="window" id="window">
+
+    <div id="stage-input">
+      <div class="prompt">WHAT'S YOUR NAME?</div>
+      <div class="input-row">
+        <input id="nameInput" type="text" autocomplete="off" spellcheck="false" maxlength="20">
+        <button id="enterBtn" type="button">ENTER</button>
+      </div>
+    </div>
+
+    <div id="stage-vn">
+      <div id="vnText" class="glitch" data-text=""></div>
+      <div id="choices"></div>
+      <div id="tapHint">[ TAP TO CONTINUE ]</div>
+    </div>
+
+    <div id="stage-fill">
+      <div id="fillPrompt"></div>
+      <div class="input-row">
+        <input id="fillInput" type="text" autocomplete="off" spellcheck="false" maxlength="30">
+        <button id="fillEnter" type="button">ENTER</button>
+      </div>
+      <div id="attemptCounter"></div>
+    </div>
+
+  </div>
+
+  <div id="smileFx"></div>
+  <div id="laughFx"></div>
+  <div id="thinkFx"></div>
+  <div id="tapLayer"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+body {
+  height: 100vh; height: 100dvh;
+  background: #0a0a0a;
+  display: flex; justify-content: center; align-items: center;
+  font-family: 'VT323', monospace;
+  overflow: hidden;
+  color: #fff;
+  transition: background 0.8s ease;
+  position: relative;
+}
+
+body.happy-mode {
+  background: radial-gradient(circle at center, #2a1620 0%, #0a0a0a 70%);
+  animation: happy-bg-pulse 4s ease-in-out infinite;
+}
+
+@keyframes happy-bg-pulse {
+  0%, 100% { background: radial-gradient(circle at center, #2a1620 0%, #0a0a0a 70%); }
+  50%      { background: radial-gradient(circle at center, #3a1d2e 0%, #0a0a0a 70%); }
+}
+
+.window {
+  position: relative;
+  width: min(90vw, 460px);
+  min-height: 230px;
+  padding: 50px 28px;
+  background: #111;
+  border: 3px solid #f0f0f0;
+  box-shadow:
+    0 0 0 3px #111,
+    0 0 0 6px #f0f0f0,
+    0 0 25px rgba(255,255,255,0.35),
+    inset 0 0 40px rgba(255,255,255,0.05);
+  border-radius: 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: box-shadow 0.8s ease, border-color 0.8s ease;
+  z-index: 20;
+}
+
+.window.happy-mode {
+  border-color: #ffd6ec;
+  box-shadow:
+    0 0 0 3px #111,
+    0 0 0 6px #ffd6ec,
+    0 0 35px rgba(255, 182, 215, 0.55),
+    0 0 70px rgba(255, 220, 150, 0.25),
+    inset 0 0 40px rgba(255, 200, 230, 0.12);
+  animation: window-happy-glow 3s ease-in-out infinite;
+}
+
+@keyframes window-happy-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px #111, 0 0 0 6px #ffd6ec,
+      0 0 35px rgba(255, 182, 215, 0.55),
+      0 0 70px rgba(255, 220, 150, 0.25),
+      inset 0 0 40px rgba(255, 200, 230, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px #111, 0 0 0 6px #ffd6ec,
+      0 0 55px rgba(255, 182, 215, 0.8),
+      0 0 100px rgba(255, 220, 150, 0.4),
+      inset 0 0 60px rgba(255, 200, 230, 0.2);
+  }
+}
+
+.window::before {
+  content: '';
+  position: absolute;
+  top: 12px; left: 14px;
+  width: 8px; height: 8px;
+  background: #f0f0f0; border-radius: 50%;
+  box-shadow: 14px 0 0 #f0f0f0, 28px 0 0 #f0f0f0;
+  transition: background 0.8s, box-shadow 0.8s;
+}
+.window.happy-mode::before {
+  background: #ffd6ec;
+  box-shadow: 14px 0 0 #ffd6ec, 28px 0 0 #ffd6ec;
+}
+
+.window::after {
+  content: '';
+  position: absolute;
+  top: 30px; left: 10px; right: 10px;
+  height: 1px; background: #f0f0f0;
+  transition: background 0.8s;
+}
+.window.happy-mode::after { background: #ffd6ec; }
+
+.prompt {
+  font-size: 30px;
+  letter-spacing: 2px;
+  margin-bottom: 26px;
+  text-shadow: 0 0 8px rgba(255,255,255,0.6);
+  animation: flicker 4s infinite;
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.6; }
+  94% { opacity: 1; }
+  96% { opacity: 0.7; }
+  97% { opacity: 1; }
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: stretch;
+  width: 100%;
+}
+
+#nameInput, #fillInput {
+  flex: 1; min-width: 0;
+  background: #000;
+  border: 2px solid #fff;
+  color: #fff;
+  font-family: 'VT323', monospace;
+  font-size: 22px;
+  padding: 8px 14px;
+  outline: none;
+  letter-spacing: 2px;
+  caret-color: #fff;
+  user-select: text;
+}
+
+#nameInput:focus, #fillInput:focus { box-shadow: 0 0 12px rgba(255,255,255,0.5); }
+
+#fillInput.wrong {
+  border-color: #ff2f6d;
+  animation: input-glitch 0.5s;
+  box-shadow: 0 0 20px #ff2f6d, inset 0 0 15px rgba(255,47,109,0.3);
+}
+
+@keyframes input-glitch {
+  0%, 100% { transform: translate(0); }
+  15% { transform: translate(-3px, 1px); }
+  30% { transform: translate(3px, -1px); }
+  45% { transform: translate(-2px, 2px); }
+  60% { transform: translate(2px, -2px); }
+  75% { transform: translate(-1px, 0); }
+}
+
+#enterBtn, #fillEnter {
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  padding: 8px 20px;
+  background: #fff;
+  color: #000;
+  border: 2px solid #fff;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+#enterBtn:hover, #fillEnter:hover {
+  background: #111; color: #fff;
+  box-shadow: 0 0 15px #fff;
+}
+
+#stage-vn { display: none; width: 100%; text-align: center; }
+
+#vnText {
+  font-size: 24px;
+  letter-spacing: 3px;
+  line-height: 1.5;
+  min-height: 60px;
+  position: relative;
+  display: inline-block;
+  color: #fff;
+  cursor: pointer;
+  padding: 6px 10px;
+  transition: transform 0.15s ease;
+}
+#vnText:hover { transform: scale(1.02); }
+
+#stage-fill { display: none; width: 100%; text-align: center; }
+
+#fillPrompt {
+  font-size: 30px;
+  letter-spacing: 2px;
+  margin-bottom: 26px;
+  text-shadow: 0 0 8px rgba(255,255,255,0.6);
+  animation: flicker 4s infinite;
+  line-height: 1.4;
+}
+
+#fillPrompt.wrong-shake { animation: fill-shake 0.5s; }
+@keyframes fill-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+#attemptCounter {
+  margin-top: 14px;
+  font-size: 18px;
+  letter-spacing: 2px;
+  opacity: 0.6;
+  color: #fff;
+}
+#attemptCounter.warning {
+  color: #ff2f6d;
+  opacity: 1;
+  animation: blink 0.6s infinite;
+}
+
+.glitch {
+  text-shadow: 0 0 10px rgba(255,255,255,0.6);
+  animation: glitch-skew-soft 6s infinite linear alternate-reverse;
+}
+
+.glitch::before, .glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+  opacity: 0.7;
+}
+
+.glitch::before {
+  color: #ff2f6d;
+  z-index: -1;
+  animation: glitch-red-soft 4s infinite linear alternate-reverse;
+}
+
+.glitch::after {
+  color: #23ffff;
+  z-index: -2;
+  animation: glitch-cyan-soft 5s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-red-soft {
+  0%   { transform: translate(0, 0);       clip-path: inset(0 0 0 0); }
+  15%  { transform: translate(-1px, 0);    clip-path: inset(20% 0 50% 0); }
+  30%  { transform: translate(1px, -1px);  clip-path: inset(60% 0 20% 0); }
+  45%  { transform: translate(0, 1px);     clip-path: inset(30% 0 40% 0); }
+  60%  { transform: translate(-1px, 0);    clip-path: inset(70% 0 10% 0); }
+  75%  { transform: translate(1px, 1px);   clip-path: inset(10% 0 70% 0); }
+  90%  { transform: translate(0, -1px);    clip-path: inset(50% 0 30% 0); }
+  100% { transform: translate(0, 0);       clip-path: inset(0 0 0 0); }
+}
+
+@keyframes glitch-cyan-soft {
+  0%   { transform: translate(0, 0);       clip-path: inset(0 0 0 0); }
+  15%  { transform: translate(1px, 0);     clip-path: inset(30% 0 40% 0); }
+  30%  { transform: translate(-1px, 1px);  clip-path: inset(50% 0 20% 0); }
+  45%  { transform: translate(0, -1px);    clip-path: inset(20% 0 60% 0); }
+  60%  { transform: translate(1px, 0);     clip-path: inset(70% 0 15% 0); }
+  75%  { transform: translate(-1px, -1px); clip-path: inset(10% 0 70% 0); }
+  90%  { transform: translate(0, 1px);     clip-path: inset(40% 0 40% 0); }
+  100% { transform: translate(0, 0);       clip-path: inset(0 0 0 0); }
+}
+
+@keyframes glitch-skew-soft {
+  0%, 100% { transform: skew(0deg); }
+  49%      { transform: skew(0deg); }
+  50%      { transform: skew(0.5deg); }
+  51%      { transform: skew(0deg); }
+}
+
+#vnText.shake { animation: shake-soft 0.5s; }
+@keyframes shake-soft {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.happy {
+  color: #fff;
+  text-shadow: 0 0 10px #fff, 0 0 20px #ffd6ec, 0 0 30px #ffb6d7, 0 0 45px #ffb6d7;
+  animation: happy-pulse 1.6s ease-in-out infinite;
+}
+
+.happy::before, .happy::after { display: none; }
+
+@keyframes happy-pulse {
+  0%, 100% { text-shadow: 0 0 10px #fff, 0 0 20px #ffd6ec, 0 0 30px #ffb6d7, 0 0 45px #ffb6d7; }
+  50%      { text-shadow: 0 0 14px #fff, 0 0 28px #ffd6ec, 0 0 45px #ffb6d7, 0 0 70px #ffb6d7; }
+}
+
+.window.happy-mode #stage-vn::before {
+  content: '☺';
+  position: absolute;
+  top: -8px;
+  right: 22px;
+  font-size: 44px;
+  color: #ffd6ec;
+  text-shadow: 0 0 18px #ffb6d7, 0 0 30px #ffb6d7;
+  animation: smile-float 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes smile-float {
+  0%, 100% { transform: translateY(0)    rotate(-6deg); opacity: 0.85; }
+  50%      { transform: translateY(-8px) rotate(6deg);  opacity: 1; }
+}
+
+.emoji-big {
+  font-size: 64px;
+  line-height: 1;
+  display: inline-block;
+  animation: emoji-pop 1.8s ease-in-out infinite;
+  text-shadow: none;
+}
+.emoji-big::before, .emoji-big::after { display: none; }
+@keyframes emoji-pop {
+  0%   { transform: scale(1)    rotate(-4deg); }
+  25%  { transform: scale(1.12) rotate(4deg); }
+  50%  { transform: scale(1.05) rotate(-3deg); }
+  75%  { transform: scale(1.12) rotate(5deg); }
+  100% { transform: scale(1)    rotate(-4deg); }
+}
+
+.smiley-huge {
+  font-size: 120px;
+  line-height: 1;
+  display: inline-block;
+  color: #ffd6ec;
+  text-shadow: 0 0 20px #fff, 0 0 40px #ffb6d7, 0 0 70px #ffb6d7, 0 0 100px #ffb6d7;
+  animation: smiley-huge-pulse 1.4s ease-in-out infinite;
+}
+@keyframes smiley-huge-pulse {
+  0%, 100% { transform: scale(1) rotate(-6deg); text-shadow: 0 0 20px #fff, 0 0 40px #ffb6d7, 0 0 70px #ffb6d7, 0 0 100px #ffb6d7; }
+  50%      { transform: scale(1.15) rotate(6deg); text-shadow: 0 0 30px #fff, 0 0 60px #ffb6d7, 0 0 100px #ffb6d7, 0 0 150px #ffb6d7; }
+}
+
+.doubt {
+  color: #fff;
+  font-size: 42px;
+  text-shadow: 0 0 10px #fff, 0 0 22px #ffe9a8, 0 0 40px #ffd166;
+  animation: doubt-tilt 1.8s ease-in-out infinite;
+}
+.doubt::before, .doubt::after { display: none; }
+@keyframes doubt-tilt {
+  0%   { transform: rotate(-6deg) translateY(0); }
+  25%  { transform: rotate(4deg)  translateY(-2px); }
+  50%  { transform: rotate(-3deg) translateY(0); }
+  75%  { transform: rotate(5deg)  translateY(-2px); }
+  100% { transform: rotate(-6deg) translateY(0); }
+}
+
+.doubt-item {
+  position: absolute;
+  bottom: -80px;
+  font-family: 'VT323', monospace;
+  color: #ffe9a8;
+  text-shadow: 0 0 8px #fff, 0 0 18px #ffd166, 0 0 30px #ffb347;
+  animation: doubt-rise 3.2s ease-out forwards;
+  pointer-events: none;
+  font-weight: bold;
+}
+@keyframes doubt-rise {
+  0%   { transform: translateY(0)      rotate(0deg)   scale(0.5); opacity: 0; }
+  12%  { opacity: 1; }
+  50%  { transform: translateY(-50vh)  rotate(-8deg)  scale(1.05); }
+  100% { transform: translateY(-115vh) rotate(10deg)  scale(1.15); opacity: 0; }
+}
+
+#tapHint {
+  margin-top: 30px;
+  font-size: 18px;
+  letter-spacing: 2px;
+  opacity: 0.5;
+  animation: blink 1.2s infinite;
+  pointer-events: none;
+}
+@keyframes blink {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.12; }
+}
+#tapHint.hidden { display: none; }
+
+#choices {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 30px;
+  width: 100%;
+  align-items: center;
+  position: relative;
+  z-index: 999;
+  pointer-events: auto;
+}
+#choices.active { display: flex; }
+
+.choice-btn {
+  font-family: 'VT323', monospace;
+  font-size: 22px;
+  letter-spacing: 3px;
+  padding: 12px 30px;
+  min-width: 180px;
+  background: #111;
+  color: #fff;
+  border: 2px solid #fff;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1000;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.choice-btn:hover, .choice-btn:active {
+  background: #fff;
+  color: #000;
+  box-shadow: 0 0 18px #fff, 0 0 35px rgba(255,255,255,0.4);
+  transform: scale(1.04);
+}
+
+body.happy-mode .choice-btn:hover, body.happy-mode .choice-btn:active {
+  background: #ffd6ec;
+  color: #111;
+  box-shadow: 0 0 20px #ffb6d7, 0 0 45px #ffb6d7;
+}
+
+.choice-btn.glitch-out {
+  animation: btn-glitch-out 0.9s ease-in-out forwards;
+  pointer-events: none;
+}
+.choice-btn.glitch-in {
+  animation: btn-glitch-in 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes btn-glitch-out {
+  0%   { transform: translate(0) skew(0deg); opacity: 1; color: #fff; background: #111; text-shadow: 0 0 6px #fff; }
+  15%  { transform: translate(-3px, 1px) skew(-3deg); color: #ff2f6d; text-shadow: -2px 0 #ff2f6d, 2px 0 #23ffff; }
+  30%  { transform: translate(3px, -1px) skew(3deg); color: #23ffff; text-shadow: 3px 0 #ff2f6d, -3px 0 #23ffff; }
+  45%  { transform: translate(-2px, 2px) skew(-2deg); opacity: 0.7; color: #fff; background: #222; text-shadow: -2px 1px #ff2f6d, 2px -1px #23ffff; }
+  60%  { transform: translate(2px, -2px) skew(2deg); opacity: 0.4; color: #23ffff; text-shadow: 2px 1px #ff2f6d, -2px -1px #23ffff; }
+  80%  { transform: translate(-1px, 1px) skew(-1deg); opacity: 0.15; color: #ff2f6d; }
+  100% { transform: translate(0) skew(0deg); opacity: 0; color: #fff; }
+}
+
+@keyframes btn-glitch-in {
+  0%   { opacity: 0; transform: translate(2px, -2px) skew(2deg); color: #23ffff; text-shadow: 2px 0 #ff2f6d, -2px 0 #23ffff; }
+  30%  { opacity: 0.4; transform: translate(-2px, 1px) skew(-2deg); color: #ff2f6d; }
+  60%  { opacity: 0.75; transform: translate(1px, -1px) skew(1deg); color: #fff; }
+  100% { opacity: 1; transform: translate(0) skew(0deg); color: #fff; background: #111; text-shadow: none; }
+}
+
+.choice-btn.runaway {
+  transition: transform 0.25s cubic-bezier(.3,1.4,.5,1);
+  position: relative;
+  will-change: transform;
+}
+
+#tapLayer {
+  position: fixed; inset: 0;
+  cursor: pointer;
+  display: none;
+  z-index: 1;
+  background: transparent;
+}
+
+#smileFx, #laughFx, #thinkFx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.smile-item {
+  position: absolute;
+  bottom: -60px;
+  color: #ffd6ec;
+  font-family: 'VT323', monospace;
+  text-shadow: 0 0 10px #ffb6d7, 0 0 20px #ffb6d7;
+  animation: smile-rise 3.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes smile-rise {
+  0%   { transform: translateY(0)     rotate(0deg)   scale(0.6); opacity: 0; }
+  15%  { opacity: 0.95; }
+  50%  { transform: translateY(-55vh) rotate(20deg)  scale(1); }
+  100% { transform: translateY(-110vh) rotate(-15deg) scale(1.1); opacity: 0; }
+}
+
+.laugh-item {
+  position: absolute;
+  bottom: -80px;
+  font-family: 'VT323', monospace;
+  color: #fff;
+  text-shadow: 0 0 8px #fff, 0 0 18px #ffd6ec, 0 0 30px #ffb6d7;
+  animation: laugh-rise 3.2s ease-out forwards;
+  pointer-events: none;
+  font-weight: normal;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+@keyframes laugh-rise {
+  0%   { transform: translateY(0)      rotate(0deg)   scale(0.5); opacity: 0; }
+  12%  { opacity: 1; }
+  50%  { transform: translateY(-50vh)  rotate(-12deg) scale(1.05); }
+  100% { transform: translateY(-115vh) rotate(14deg)  scale(1.15); opacity: 0; }
+}
+
+.shutdown-shake {
+  animation: shutdown-shake-kf 0.08s infinite !important;
+}
+@keyframes shutdown-shake-kf {
+  0%   { transform: translate(0, 0) skew(0deg); }
+  25%  { transform: translate(-4px, 2px) skew(-1deg); }
+  50%  { transform: translate(4px, -2px) skew(1deg); }
+  75%  { transform: translate(-2px, -3px) skew(0.5deg); }
+  100% { transform: translate(3px, 3px) skew(-0.5deg); }
+}
+
+@keyframes shutdown-flash {
+  0%, 100% { filter: none; }
+  50%      { filter: brightness(0.3) contrast(2) hue-rotate(180deg); }
+}
+
+@keyframes shutdown-text {
+  0%, 100% { opacity: 1; transform: translateX(0); }
+  25%      { opacity: 0.5; transform: translateX(-3px); }
+  50%      { opacity: 1; transform: translateX(3px); }
+  75%      { opacity: 0.7; transform: translateX(-2px); }
+}
+</style>
+<script>
+/* ============================================================
+   ELEMENTS
+   ============================================================ */
+const input       = document.getElementById('nameInput');
+const enterBtn    = document.getElementById('enterBtn');
+const stageIn     = document.getElementById('stage-input');
+const stageVN     = document.getElementById('stage-vn');
+const stageFill   = document.getElementById('stage-fill');
+const vnText      = document.getElementById('vnText');
+const choicesEl   = document.getElementById('choices');
+const tapHint     = document.getElementById('tapHint');
+const tapLayer    = document.getElementById('tapLayer');
+const windowEl    = document.getElementById('window');
+const smileFx     = document.getElementById('smileFx');
+const laughFx     = document.getElementById('laughFx');
+const thinkFx     = document.getElementById('thinkFx');
+const fillPrompt  = document.getElementById('fillPrompt');
+const fillInput   = document.getElementById('fillInput');
+const fillEnter   = document.getElementById('fillEnter');
+const attemptCounter = document.getElementById('attemptCounter');
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const CORRECT_NAME  = 'yohan';
+const LAUGH_TRIGGER = "I'll let that slide for now.";
+
+const BAD_PATH = [
+  "ISN'T YOUR NAME IS YOHAN?",
+  "You're lying. It's just getting started. But I like that.",
+  "I'll let that slide for now.",
+  "WHAHAHAHAHA",
+  "BAHO MO",
+  "__COLOR_QUESTION_BAD__",
+];
+
+const GOOD_PATH = [
+  "☺",
+  "__COLOR_QUESTION_GOOD__",
+];
+
+const FILL_QUESTIONS = [
+  { prompt: "MAY BENTE--",          answers: ["kaba", "kaba?"] },
+  { prompt: "WALANG KANIN--",        answers: ["buseng"] },
+  { prompt: "PWEDE MAG TANONG?",     answers: ["never grow old"] },
+  { prompt: "MR--",                  answers: ["witness"] },
+  { prompt: "YOHOO--",               answers: ["dito ang tingin"] },
+  { prompt: "KAHIT ADIK--",          answers: ["samin"] },
+  { prompt: "BAKIT KABA SORRY NANG SORRY? HINDI MO NAMAN KASALANAN NA HINDI MO AKO", answers: ["mahal"] },
+];
+
+let currentFillIndex = 0;
+
+const NICKNAME_QUESTION = {
+  prompt: "ANONG NICKNAME KO SAYO?",
+  answers: ["baho"],
+  maxAttempts: 5,
+};
+
+let nicknameAttempts = 0;
+let currentFillMode = 'main';
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let lines = [];
+let vnIndex = 0;
+let vnActive = false;
+let happyMode = false;
+let queuedLines = [];
+
+/* ============================================================
+   AUDIO ENGINE
+   ============================================================ */
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playTone({ freq = 440, duration = 0.15, type = 'sine', volume = 0.15, sweepTo = null }) {
+  const ctx = getAudio();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  if (sweepTo) osc.frequency.exponentialRampToValueAtTime(sweepTo, ctx.currentTime + duration);
+  gain.gain.setValueAtTime(volume, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + duration);
+}
+
+function playHappyChime() {
+  const notes = [523.25, 659.25, 783.99, 1046.50];
+  notes.forEach((f, i) => {
+    setTimeout(() => {
+      playTone({ freq: f, duration: 0.35, type: 'sine', volume: 0.12 });
+      playTone({ freq: f * 2, duration: 0.25, type: 'sine', volume: 0.05 });
+    }, i * 90);
+  });
+}
+
+function playGlitchNoise() {
+  const ctx = getAudio();
+  const duration = 0.4;
+  const bufferSize = ctx.sampleRate * duration;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * (Math.random() > 0.9 ? 1 : 0.25);
+  }
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 1200;
+  filter.Q.value = 0.8;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.10, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+  source.connect(filter).connect(gain).connect(ctx.destination);
+  source.start();
+  source.stop(ctx.currentTime + duration);
+  playTone({ freq: 180, duration: 0.3, type: 'square', volume: 0.05, sweepTo: 80 });
+}
+
+function playShutdownGlitchSound() {
+  const ctx = getAudio();
+  const now = ctx.currentTime;
+  const totalDuration = 1.4;
+
+  const bufferSize = ctx.sampleRate * totalDuration;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    const fade = 1 - (i / bufferSize);
+    data[i] = (Math.random() * 2 - 1) * fade * (Math.random() > 0.7 ? 1 : 0.4);
+  }
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(4000, now);
+  filter.frequency.exponentialRampToValueAtTime(200, now + totalDuration);
+  filter.Q.value = 1.2;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.22, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + totalDuration);
+  source.connect(filter).connect(gain).connect(ctx.destination);
+  source.start(now);
+  source.stop(now + totalDuration);
+
+  const osc1 = ctx.createOscillator();
+  const osc1Gain = ctx.createGain();
+  osc1.type = 'sawtooth';
+  osc1.frequency.setValueAtTime(280, now);
+  osc1.frequency.exponentialRampToValueAtTime(35, now + 1.2);
+  osc1Gain.gain.setValueAtTime(0.14, now);
+  osc1Gain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+  osc1.connect(osc1Gain).connect(ctx.destination);
+  osc1.start(now);
+  osc1.stop(now + 1.3);
+
+  const osc2 = ctx.createOscillator();
+  const osc2Gain = ctx.createGain();
+  osc2.type = 'square';
+  osc2.frequency.setValueAtTime(1800, now + 0.05);
+  osc2.frequency.exponentialRampToValueAtTime(80, now + 1.0);
+  osc2Gain.gain.setValueAtTime(0.06, now + 0.05);
+  osc2Gain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+  osc2.connect(osc2Gain).connect(ctx.destination);
+  osc2.start(now + 0.05);
+  osc2.stop(now + 1.05);
+
+  const stutters = [60, 130, 180, 250, 340, 460, 620, 820, 1000];
+  stutters.forEach((delay, i) => {
+    const t = now + delay / 1000;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = Math.random() > 0.5 ? 'square' : 'sawtooth';
+    osc.frequency.setValueAtTime(200 + Math.random() * 1200, t);
+    g.gain.setValueAtTime(0.08 * (1 - i / stutters.length), t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.06);
+  });
+
+  const osc3 = ctx.createOscillator();
+  const osc3Gain = ctx.createGain();
+  osc3.type = 'sine';
+  osc3.frequency.setValueAtTime(120, now + 1.3);
+  osc3.frequency.exponentialRampToValueAtTime(40, now + 1.4);
+  osc3Gain.gain.setValueAtTime(0.15, now + 1.3);
+  osc3Gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+  osc3.connect(osc3Gain).connect(ctx.destination);
+  osc3.start(now + 1.3);
+  osc3.stop(now + 1.45);
+}
+
+function playLaughSound() {
+  const notes = [440, 415, 392, 370, 349];
+  notes.forEach((f, i) => {
+    setTimeout(() => {
+      playTone({ freq: f, duration: 0.09, type: 'sawtooth', volume: 0.09 });
+      playTone({ freq: f * 0.5, duration: 0.1, type: 'triangle', volume: 0.05 });
+    }, i * 130);
+  });
+  setTimeout(() => playTone({ freq: 523, duration: 0.08, type: 'triangle', volume: 0.07 }), 700);
+  setTimeout(() => playTone({ freq: 494, duration: 0.08, type: 'triangle', volume: 0.06 }), 780);
+  setTimeout(() => playTone({ freq: 466, duration: 0.1,  type: 'triangle', volume: 0.05 }), 860);
+}
+
+function playDoubtSound() {
+  playTone({ freq: 220, duration: 0.25, type: 'triangle', volume: 0.08, sweepTo: 165 });
+  setTimeout(() => playTone({ freq: 175, duration: 0.35, type: 'triangle', volume: 0.07, sweepTo: 130 }), 280);
+}
+
+function playTapSound() {
+  if (happyMode) {
+    playTone({ freq: 880, duration: 0.08, type: 'sine', volume: 0.08 });
+    setTimeout(() => playTone({ freq: 1320, duration: 0.06, type: 'sine', volume: 0.05 }), 40);
+  } else {
+    playTone({ freq: 500, duration: 0.05, type: 'square', volume: 0.06 });
+    setTimeout(() => playTone({ freq: 250, duration: 0.05, type: 'square', volume: 0.05 }), 30);
+  }
+}
+
+/* ============================================================
+   STAGE 1: SUBMIT NAME
+   ============================================================ */
+function submit() {
+  const value = input.value.trim();
+  if (value === '') return;
+  getAudio();
+  const isCorrect = value.toLowerCase() === CORRECT_NAME;
+  happyMode = isCorrect;
+
+  if (isCorrect) {
+    lines = [ ...GOOD_PATH ];
+  } else {
+    lines = [ value + '?', ...BAD_PATH ];
+  }
+  vnIndex = 0;
+
+  stageIn.style.display = 'none';
+  stageVN.style.display = 'block';
+  tapLayer.style.display = 'block';
+  tapHint.style.display = 'block';
+  tapHint.classList.remove('hidden');
+
+  if (isCorrect) {
+    activateHappyMode();
+    setText(lines[0], true);
+    playHappyChime();
+  } else {
+    setText(lines[0], false);
+    vnText.classList.add('shake');
+    playGlitchNoise();
+  }
+
+  vnActive = false;
+  setTimeout(() => { vnActive = true; }, 800);
+}
+
+/* ============================================================
+   ADVANCE
+   ============================================================ */
+function advance() {
+  if (choicesEl.classList.contains('active')) return;
+  if (!vnActive) return;
+  clearAllEffects();
+
+  // Special markers
+  if (queuedLines.length > 0 && queuedLines[0] === '__BEAUTY_QUESTION__') {
+    queuedLines.shift(); showBeautyQuestion(); return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === '__TRAITS_QUESTION__') {
+    queuedLines.shift(); showTraitsQuestion(); return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === '__FILL_QUESTIONS__') {
+    queuedLines.shift(); startFillQuestions(); return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === '__BADING_QUESTION__') {
+    queuedLines.shift(); showBadingQuestion(); return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === 'GUSTO MO?') {
+    queuedLines.shift(); showMakulitQuestion(); return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === '__GLITCH_LINE__') {
+    queuedLines.shift(); showGlitchLine(); return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === '__GUSTO_MO_KO_QUESTION__') {
+    queuedLines.shift(); showGustoMoKoQuestion(); return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === '__NICKNAME_QUESTION__') {
+    queuedLines.shift(); startNicknameQuestion(); return;
+  }
+
+  if (queuedLines.length > 0) {
+    const nextLine = queuedLines.shift();
+    setText(nextLine, happyMode);
+    vnText.classList.remove('shake');
+    playTapSound();
+    handleLineEffects(nextLine);
+    return;
+  }
+
+  vnIndex++;
+
+  if (vnIndex >= lines.length) {
+    setText("[ END OF PROLOGUE ]", happyMode);
+    tapHint.classList.add('hidden');
+    return;
+  }
+
+  const nextLine = lines[vnIndex];
+
+  if (nextLine === "__COLOR_QUESTION_BAD__") {
+    showColorQuestion("WHAT'S MAJA'S FAVORITE COLOR?"); return;
+  }
+  if (nextLine === "__COLOR_QUESTION_GOOD__") {
+    showColorQuestion("WHAT'S MAX FAVOURITE COLOR?"); return;
+  }
+
+  setText(nextLine, happyMode);
+  vnText.classList.remove('shake');
+  playTapSound();
+  handleLineEffects(nextLine);
+}
+
+/* ============================================================
+   LINE EFFECTS
+   ============================================================ */
+function handleLineEffects(nextLine) {
+  const upper = nextLine.toUpperCase();
+
+  if (nextLine === LAUGH_TRIGGER)   triggerLaughEffect();
+  if (upper.includes("WHAHA"))       triggerLaughEffect();
+  if (nextLine === '🤔')             triggerDoubtEffect();
+
+  if (upper.includes("KAYA TROPA"))  triggerHappyBurst();
+  if (nextLine === '😉' || nextLine === '🫶') triggerHappyBurst();
+
+  if (nextLine === '☺')              triggerSmileyBurst();
+}
+
+/* ============================================================
+   GLITCH LINE
+   ============================================================ */
+function showGlitchLine() {
+  setText('SATING DALAWA?', happyMode);
+  vnText.classList.remove('happy');
+  vnText.classList.add('glitch');
+  playGlitchNoise();
+  vnText.classList.add('shake');
+  setTimeout(() => vnText.classList.remove('shake'), 500);
+}
+
+/* ============================================================
+   COLOR QUESTION
+   ============================================================ */
+function showColorQuestion(questionText) {
+  tapHint.classList.add('hidden');
+  tapHint.style.display = 'none';
+  setText(questionText, happyMode);
+  vnText.classList.remove('shake');
+  playTapSound();
+
+  choicesEl.innerHTML = '';
+  choicesEl.classList.add('active');
+  vnActive = false;
+
+  const colors = ['BLUE', 'YELLOW', 'PURPLE'];
+  colors.forEach(c => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'choice-btn';
+    btn.textContent = c;
+    btn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleColorChoice(c);
+    };
+    btn.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleColorChoice(c);
+    }, { passive: false });
+    choicesEl.appendChild(btn);
+  });
+}
+
+/* ============================================================
+   COLOR CHOICE HANDLER
+   ------------------------------------------------------------
+   BLUE / YELLOW / PURPLE — LAHAT DERETSO SA POGI/CUTE/MAGANDA
+   - BLUE / YELLOW → KANINONG FAVOURITE YAN? → 🤔 → POGI/CUTE/MAGANDA
+   - PURPLE       → VERY GOOD! → POGI/CUTE/MAGANDA
+   ============================================================ */
+function handleColorChoice(color) {
+  choicesEl.classList.remove('active');
+  choicesEl.innerHTML = '';
+  clearAllEffects();
+
+  if (color === 'PURPLE') {
+    // TAMA — VERY GOOD! tapos deretso sa POGI/CUTE/MAGANDA
+    setText('VERY GOOD!', true);
+    document.body.classList.add('happy-mode');
+    windowEl.classList.add('happy-mode');
+    vnText.classList.remove('glitch');
+    vnText.classList.add('happy');
+    playHappyChime();
+    triggerSmileyBurst();
+
+    // Queue: tapos na yung color question, next na yung POGI/CUTE/MAGANDA
+    queuedLines = ['__BEAUTY_QUESTION__'];
+
+    tapHint.style.display = 'block';
+    tapHint.classList.remove('hidden');
+    vnActive = false;
+    setTimeout(() => { vnActive = true; }, 500);
+
+  } else {
+    // BLUE o YELLOW — KANINONG FAVOURITE YAN? → 🤔 → TAPOS → POGI/CUTE/MAGANDA
+    setText('KANINONG FAVOURITE YAN?', happyMode);
+    playTapSound();
+
+    // Queue: doubt emoji lang, tapos na yung color question
+    queuedLines = ['🤔'];
+
+    tapHint.style.display = 'block';
+    tapHint.classList.remove('hidden');
+    vnActive = false;
+    setTimeout(() => { vnActive = true; }, 500);
+  }
+}
+
+/* ============================================================
+   BEAUTY QUESTION
+   ============================================================ */
+function showBeautyQuestion() {
+  tapHint.classList.add('hidden');
+  tapHint.style.display = 'none';
+
+  setText('POGI / CUTE / MAGANDA?', happyMode);
+  vnText.classList.remove('shake');
+  playTapSound();
+
+  choicesEl.innerHTML = '';
+  choicesEl.classList.add('active');
+  vnActive = false;
+
+  const options = ['POGI', 'CUTE', 'MAGANDA'];
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'choice-btn';
+    btn.textContent = opt;
+    btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); handleBeautyChoice(opt); };
+    btn.addEventListener('touchstart', function(e) {
+      e.preventDefault(); e.stopPropagation(); handleBeautyChoice(opt);
+    }, { passive: false });
+    choicesEl.appendChild(btn);
+  });
+}
+
+function handleBeautyChoice(choice) {
+  choicesEl.classList.remove('active');
+  choicesEl.innerHTML = '';
+  clearAllEffects();
+
+  if (choice === 'POGI') {
+    setText('KAYA TROPA KITA EH', true);
+    vnText.classList.remove('glitch'); vnText.classList.add('happy');
+    playHappyChime();
+    triggerHappyBurst();
+    queuedLines = ['😉', '__TRAITS_QUESTION__'];
+  }
+  else if (choice === 'CUTE') {
+    setText('ALAM KO ALAM KO', happyMode);
+    playTapSound();
+    queuedLines = ['WAHAHAHAHA', '🫶', '__TRAITS_QUESTION__'];
+  }
+  else {
+    setText('ANO YAN?', happyMode);
+    playTapSound();
+    queuedLines = ['WHAHAHAHHA', '__TRAITS_QUESTION__'];
+  }
+
+  tapHint.style.display = 'block';
+  tapHint.classList.remove('hidden');
+  vnActive = false;
+  setTimeout(() => { vnActive = true; }, 500);
+}
+
+/* ============================================================
+   TRAITS QUESTION
+   ============================================================ */
+function showTraitsQuestion() {
+  tapHint.classList.add('hidden');
+  tapHint.style.display = 'none';
+
+  setText('MAINGAY / MADALDAL / MAKULIT?', happyMode);
+  vnText.classList.remove('shake');
+  playTapSound();
+
+  choicesEl.innerHTML = '';
+  choicesEl.classList.add('active');
+  vnActive = false;
+
+  const options = ['MAINGAY', 'MADALDAL', 'MAKULIT'];
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'choice-btn';
+    btn.textContent = opt;
+    btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); handleTraitsChoice(opt); };
+    btn.addEventListener('touchstart', function(e) {
+      e.preventDefault(); e.stopPropagation(); handleTraitsChoice(opt);
+    }, { passive: false });
+    choicesEl.appendChild(btn);
+  });
+}
+
+function handleTraitsChoice(choice) {
+  choicesEl.classList.remove('active');
+  choicesEl.innerHTML = '';
+  clearAllEffects();
+
+  if (choice === 'MAINGAY') {
+    setText('WAHAHAHAHA', happyMode);
+    playTapSound();
+    triggerLaughEffect();
+    queuedLines = ['__FILL_QUESTIONS__'];
+  }
+  else if (choice === 'MADALDAL') {
+    setText('PERO YOHAN', happyMode);
+    playTapSound();
+    queuedLines = ['WHAHAHAAHHA', 'TAPOS ANO ALAM MO BA', 'WHAHAAHAH', '__FILL_QUESTIONS__'];
+  }
+  else {
+    setText('WAHAHAHAHAH', happyMode);
+    playTapSound();
+    triggerLaughEffect();
+    queuedLines = ['GUSTO MO NAMAN', 'GUSTO MO?'];
+  }
+
+  tapHint.style.display = 'block';
+  tapHint.classList.remove('hidden');
+  vnActive = false;
+  setTimeout(() => { vnActive = true; }, 500);
+}
+
+/* ============================================================
+   MAKULIT NESTED QUESTION
+   ============================================================ */
+function showMakulitQuestion() {
+  tapHint.classList.add('hidden');
+  tapHint.style.display = 'none';
+
+  setText('GUSTO MO?', happyMode);
+  vnText.classList.remove('happy');
+  vnText.classList.add('glitch');
+  playTapSound();
+
+  choicesEl.innerHTML = '';
+  choicesEl.classList.add('active');
+  vnActive = false;
+
+  const options = ['OO NA OONA', 'HINDI', 'EWAN'];
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'choice-btn';
+    btn.textContent = opt;
+    btn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); handleMakulitChoice(opt); };
+    btn.addEventListener('touchstart', function(e) {
+      e.preventDefault(); e.stopPropagation(); handleMakulitChoice(opt);
+    }, { passive: false });
+    choicesEl.appendChild(btn);
+  });
+}
+
+function handleMakulitChoice(choice) {
+  choicesEl.classList.remove('active');
+  choicesEl.innerHTML = '';
+  clearAllEffects();
+
+  if (choice === 'OO NA OONA') {
+    setText('TADO WHAHAHAHAH', happyMode);
+    playTapSound();
+    triggerLaughEffect();
+    queuedLines = ['__FILL_QUESTIONS__'];
+  }
+  else if (choice === 'HINDI') {
+    setText(':((', happyMode);
+    playTapSound();
+    queuedLines = ['__FILL_QUESTIONS__'];
+  }
+  else {
+    setText('ASSIMMM', happyMode);
+    playTapSound();
+    queuedLines = ['__FILL_QUESTIONS__'];
+  }
+
+  tapHint.style.display = 'block';
+  tapHint.classList.remove('hidden');
+  vnActive = false;
+  setTimeout(() => { vnActive = true; }, 500);
+}
+
+/* ============================================================
+   FILL IN THE BLANK STAGE
+   ============================================================ */
+function startFillQuestions() {
+  currentFillIndex = 0;
+  currentFillMode = 'main';
+
+  stageVN.style.display = 'none';
+  stageFill.style.display = 'block';
+  tapLayer.style.display = 'none';
+  tapHint.classList.add('hidden');
+  attemptCounter.style.display = 'none';
+  attemptCounter.textContent = '';
+
+  showFillQuestion();
+}
+
+function showFillQuestion() {
+  const q = FILL_QUESTIONS[currentFillIndex];
+  if (!q) {
+    stageFill.style.display = 'none';
+    stageVN.style.display = 'block';
+    tapLayer.style.display = 'block';
+    vnActive = true;
+
+    queuedLines = [
+      'PO?',
+      'AY WHAHAHAHA',
+      'TANTADO',
+      'MALI PALA',
+      'TAWAG MO KO EH',
+      '__BADING_QUESTION__',
+    ];
+
+    const firstLine = queuedLines.shift();
+    setText(firstLine, happyMode);
+    playTapSound();
+    handleLineEffects(firstLine);
+
+    tapHint.style.display = 'block';
+    tapHint.classList.remove('hidden');
+    return;
+  }
+
+  fillPrompt.textContent = q.prompt;
+  fillInput.value = '';
+  fillInput.classList.remove('wrong');
+  fillInput.disabled = false;
+  fillEnter.disabled = false;
+  fillInput.focus();
+}
+
+/* ============================================================
+   NICKNAME QUESTION
+   ============================================================ */
+function startNicknameQuestion() {
+  currentFillMode = 'nickname';
+  nicknameAttempts = 0;
+
+  stageVN.style.display = 'none';
+  stageFill.style.display = 'block';
+  tapLayer.style.display = 'none';
+  tapHint.classList.add('hidden');
+
+  fillPrompt.textContent = NICKNAME_QUESTION.prompt;
+  fillInput.value = '';
+  fillInput.classList.remove('wrong');
+  fillInput.disabled = false;
+  fillEnter.disabled = false;
+
+  attemptCounter.style.display = 'block';
+  updateAttemptCounter();
+
+  fillInput.focus();
+}
+
+function updateAttemptCounter() {
+  const remaining = NICKNAME_QUESTION.maxAttempts - nicknameAttempts;
+  attemptCounter.textContent = `ATTEMPTS LEFT: ${remaining} / ${NICKNAME_QUESTION.maxAttempts}`;
+  if (remaining <= 2) {
+    attemptCounter.classList.add('warning');
+  } else {
+    attemptCounter.classList.remove('warning');
+  }
+}
+
+/* ============================================================
+   SUBMIT FILL
+   ============================================================ */
+function submitFill() {
+  const value = fillInput.value.trim().toLowerCase();
+  if (value === '') return;
+
+  const normalized = value.replace(/[?!.,]/g, '').replace(/\s+/g, ' ').trim();
+
+  if (currentFillMode === 'main') {
+    const q = FILL_QUESTIONS[currentFillIndex];
+    const isCorrect = q.answers.some(a => {
+      const na = a.toLowerCase().replace(/[?!.,]/g, '').replace(/\s+/g, ' ').trim();
+      return na === normalized;
+    });
+
+    if (isCorrect) {
+      playHappyChime();
+      triggerSmileyBurst();
+      currentFillIndex++;
+      setTimeout(showFillQuestion, 300);
+    } else {
+      playGlitchNoise();
+      fillInput.classList.add('wrong');
+      fillPrompt.classList.add('wrong-shake');
+      setTimeout(() => {
+        fillInput.classList.remove('wrong');
+        fillPrompt.classList.remove('wrong-shake');
+        fillInput.value = '';
+        fillInput.focus();
+      }, 600);
+    }
+  } else {
+    const isCorrect = NICKNAME_QUESTION.answers.some(a => {
+      const na = a.toLowerCase().replace(/[?!.,]/g, '').replace(/\s+/g, ' ').trim();
+      return na === normalized;
+    });
+
+    if (isCorrect) {
+      playHappyChime();
+      triggerLaughEffect();
+
+      stageFill.style.display = 'none';
+      stageVN.style.display = 'block';
+      tapLayer.style.display = 'block';
+      vnActive = true;
+      attemptCounter.style.display = 'none';
+
+      setText('BAHO MO WHAHAHAHHAHA', happyMode);
+      playTapSound();
+
+      queuedLines = ['__FINAL_SMILEY__'];
+
+      tapHint.style.display = 'block';
+      tapHint.classList.remove('hidden');
+    } else {
+      nicknameAttempts++;
+      playGlitchNoise();
+      fillInput.classList.add('wrong');
+      fillPrompt.classList.add('wrong-shake');
+
+      updateAttemptCounter();
+
+      setTimeout(() => {
+        fillInput.classList.remove('wrong');
+        fillPrompt.classList.remove('wrong-shake');
+        fillInput.value = '';
+
+        if (nicknameAttempts >= NICKNAME_QUESTION.maxAttempts) {
+          fillInput.disabled = true;
+          fillEnter.disabled = true;
+          attemptCounter.classList.add('warning');
+
+          fillPrompt.textContent = '';
+          fillPrompt.style.display = 'none';
+
+          windowEl.classList.add('shutdown-shake');
+          playShutdownGlitchSound();
+          document.body.style.animation = 'shutdown-flash 0.15s infinite';
+
+          const shutdownText = document.createElement('div');
+          shutdownText.innerHTML = 'SYSTEM SHUTDOWN...';
+          shutdownText.style.cssText = `
+            color: #ff2f6d;
+            font-size: 28px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px #ff2f6d, 0 0 20px #ff2f6d;
+            animation: shutdown-text 0.15s infinite;
+            margin-top: 20px;
+            font-family: 'VT323', monospace;
+          `;
+          stageFill.appendChild(shutdownText);
+
+          setTimeout(() => {
+            location.reload();
+          }, 2400);
+        } else {
+          fillInput.focus();
+        }
+      }, 600);
+    }
+  }
+}
+
+/* ============================================================
+   FINAL SMILEY
+   ============================================================ */
+function showFinalSmiley() {
+  vnText.classList.remove('glitch', 'happy', 'doubt', 'emoji-big', 'smiley-huge');
+  vnText.textContent = '☺';
+  vnText.setAttribute('data-text', '☺');
+  vnText.classList.add('smiley-huge');
+
+  triggerSmileyBurst();
+  playHappyChime();
+
+  tapHint.classList.add('hidden');
+  vnActive = false;
+}
+
+/* ============================================================
+   BADING QUESTION
+   ============================================================ */
+function showBadingQuestion() {
+  tapHint.classList.add('hidden');
+  tapHint.style.display = 'none';
+
+  setText('BADING KABA?', happyMode);
+  vnText.classList.remove('shake');
+  playTapSound();
+
+  choicesEl.innerHTML = '';
+  choicesEl.classList.add('active');
+  vnActive = false;
+
+  const ooBtn = document.createElement('button');
+  ooBtn.type = 'button';
+  ooBtn.className = 'choice-btn';
+  ooBtn.textContent = 'OO';
+  ooBtn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); handleBadingChoice('OO'); };
+  ooBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault(); e.stopPropagation(); handleBadingChoice('OO');
+  }, { passive: false });
+  choicesEl.appendChild(ooBtn);
+
+  const hindiBtn = document.createElement('button');
+  hindiBtn.type = 'button';
+  hindiBtn.className = 'choice-btn';
+  hindiBtn.textContent = 'HINDI';
+  hindiBtn.onclick = function(e) { e.preventDefault(); e.stopPropagation(); handleHindiButton(hindiBtn); };
+  hindiBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault(); e.stopPropagation(); handleHindiButton(hindiBtn);
+  }, { passive: false });
+  choicesEl.appendChild(hindiBtn);
+}
+
+function handleBadingChoice(choice) {
+  choicesEl.classList.remove('active');
+  choicesEl.innerHTML = '';
+  clearAllEffects();
+
+  if (choice === 'OO') {
+    setText('WHAHAAHHAHAHAHAHAHAA HULI TADO', happyMode);
+    playTapSound();
+    triggerLaughEffect();
+
+    queuedLines = [
+      'PERO YOHAN',
+      'WAHAHHAHA',
+      'SEGE NA NGA SEGE NA NGA',
+      'LEGIT LEGIT',
+      'AAMININ KO BA?',
+      'OH BAKA BIGLA LANG',
+      'MAWALA',
+      'KUNG ANO MANG',
+      '__GLITCH_LINE__',
+      'WAHAHAHAHA',
+      'TADO KANTA YAN, PINAG PAPAWISAN KA NANAMAN',
+      'PERO YOHAN',
+      'HINAHANAP MO KO?',
+      'WHAHAAHHAHA',
+      'MALI',
+      'NAKALIMUTAN KO YONG CHOICES',
+      'PERO YOHAN',
+      '__GUSTO_MO_KO_QUESTION__',
+    ];
+  }
+
+  tapHint.style.display = 'block';
+  tapHint.classList.remove('hidden');
+  vnActive = false;
+  setTimeout(() => { vnActive = true; }, 500);
+}
+
+/* ============================================================
+   HINDI BUTTON — GLITCH OUT & COME BACK
+   ============================================================ */
+function handleHindiButton(btn) {
+  if (btn.classList.contains('glitch-out') || btn.classList.contains('glitch-in')) return;
+  playGlitchNoise();
+  btn.classList.add('glitch-out');
+
+  setTimeout(() => {
+    btn.classList.remove('glitch-out');
+    btn.classList.add('glitch-in');
+    setTimeout(() => {
+      btn.classList.remove('glitch-in');
+    }, 600);
+  }, 900);
+}
+
+/* ============================================================
+   GUSTO MO KO?
+   ============================================================ */
+function showGustoMoKoQuestion() {
+  tapHint.classList.add('hidden');
+  tapHint.style.display = 'none';
+
+  setText('GUSTO MO KO?', happyMode);
+  vnText.classList.remove('shake');
+  playTapSound();
+
+  choicesEl.innerHTML = '';
+  choicesEl.classList.add('active');
+  vnActive = false;
+
+  const yesBtn = document.createElement('button');
+  yesBtn.type = 'button';
+  yesBtn.className = 'choice-btn';
+  yesBtn.textContent = 'YES';
+  yesBtn.onclick = function(e) {
+    e.preventDefault(); e.stopPropagation();
+    handleGustoMoKoChoice('YES');
+  };
+  yesBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault(); e.stopPropagation();
+    handleGustoMoKoChoice('YES');
+  }, { passive: false });
+  choicesEl.appendChild(yesBtn);
+
+  const noBtn = document.createElement('button');
+  noBtn.type = 'button';
+  noBtn.className = 'choice-btn runaway';
+  noBtn.textContent = 'NO';
+
+  function dodge() {
+    const maxX = 100;
+    const maxY = 60;
+    const x = (Math.random() * 2 - 1) * maxX;
+    const y = (Math.random() * 2 - 1) * maxY;
+    noBtn.style.transform = `translate(${x}px, ${y}px)`;
+  }
+
+  noBtn.addEventListener('mouseenter', dodge);
+  noBtn.addEventListener('touchstart', function(e) {
+    e.preventDefault(); e.stopPropagation(); dodge();
+  }, { passive: false });
+  noBtn.addEventListener('click', function(e) {
+    e.preventDefault(); e.stopPropagation(); dodge();
+  });
+
+  choicesEl.appendChild(noBtn);
+}
+
+function handleGustoMoKoChoice(choice) {
+  choicesEl.classList.remove('active');
+  choicesEl.innerHTML = '';
+  clearAllEffects();
+
+  if (choice === 'YES') {
+    setText('TANTADO WHAHAHAHHAA BAT NAG YES KA', happyMode);
+    playTapSound();
+    triggerLaughEffect();
+
+    queuedLines = [
+      'WHAHAAHHA',
+      'PERO YOHAN',
+      'WAHAHHAHA',
+      'MALI',
+      '__NICKNAME_QUESTION__',
+    ];
+  }
+
+  tapHint.style.display = 'block';
+  tapHint.classList.remove('hidden');
+  vnActive = false;
+  setTimeout(() => { vnActive = true; }, 500);
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function activateHappyMode() {
+  document.body.classList.add('happy-mode');
+  windowEl.classList.add('happy-mode');
+  vnText.classList.remove('glitch');
+  vnText.classList.add('happy');
+}
+
+function setText(txt, isHappy) {
+  vnText.textContent = txt;
+  vnText.setAttribute('data-text', txt);
+  vnText.classList.remove('happy', 'glitch', 'doubt', 'emoji-big', 'smiley-huge');
+
+  const isEmoji = /^[\p{Emoji}\u200d\uFE0F]+$/u.test(txt) && txt.length <= 4;
+  if (isEmoji) {
+    vnText.classList.add('emoji-big');
+    return;
+  }
+
+  if (txt === '🤔') {
+    vnText.classList.add('doubt');
+  } else if (isHappy) {
+    vnText.classList.add('happy');
+  } else {
+    vnText.classList.add('glitch');
+  }
+}
+
+function clearAllEffects() {
+  smileFx.innerHTML = '';
+  laughFx.innerHTML = '';
+  thinkFx.innerHTML = '';
+}
+
+function triggerSmileyBurst() {
+  for (let i = 0; i < 20; i++) setTimeout(spawnSmile, i * 70);
+}
+
+function triggerHappyBurst() {
+  playHappyChime();
+  for (let i = 0; i < 15; i++) setTimeout(spawnSmile, i * 60);
+}
+
+function triggerLaughEffect() {
+  playLaughSound();
+  for (let i = 0; i < 22; i++) setTimeout(spawnLaugh, i * 70);
+}
+
+function triggerDoubtEffect() {
+  playDoubtSound();
+  for (let i = 0; i < 18; i++) setTimeout(spawnDoubt, i * 80);
+}
+
+function spawnSmile() {
+  const el = document.createElement('div');
+  el.className = 'smile-item';
+  el.textContent = '☺';
+  el.style.left = Math.random() * 100 + 'vw';
+  el.style.fontSize = (20 + Math.random() * 22) + 'px';
+  el.style.animationDuration = (2.8 + Math.random() * 1.8) + 's';
+  smileFx.appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+const LAUGH_WORDS = ['WHAHAHAHAHA', 'HAHAHA', 'HEHEHE', 'WHAHAHA', 'HAHAHAHA', 'HEHE'];
+
+function spawnLaugh() {
+  const el = document.createElement('div');
+  el.className = 'laugh-item';
+  el.textContent = LAUGH_WORDS[Math.floor(Math.random() * LAUGH_WORDS.length)];
+  el.style.left = Math.random() * 90 + 'vw';
+  el.style.fontSize = (18 + Math.random() * 30) + 'px';
+  el.style.animationDuration = (2.6 + Math.random() * 1.6) + 's';
+  laughFx.appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+const DOUBT_WORDS = ['?', '??', '???', '...', '?', '???', '...?', '??'];
+
+function spawnDoubt() {
+  const el = document.createElement('div');
+  el.className = 'doubt-item';
+  el.textContent = DOUBT_WORDS[Math.floor(Math.random() * DOUBT_WORDS.length)];
+  el.style.left = Math.random() * 90 + 'vw';
+  el.style.fontSize = (22 + Math.random() * 26) + 'px';
+  el.style.animationDuration = (2.8 + Math.random() * 1.5) + 's';
+  thinkFx.appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+/* ============================================================
+   OVERRIDE ADVANCE
+   ============================================================ */
+const _originalAdvance = advance;
+
+advance = function() {
+  if (queuedLines.length > 0 && queuedLines[0] === '__GLITCH_LINE__') {
+    queuedLines.shift();
+    showGlitchLine();
+    return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === '__GUSTO_MO_KO_QUESTION__') {
+    queuedLines.shift();
+    showGustoMoKoQuestion();
+    return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === '__NICKNAME_QUESTION__') {
+    queuedLines.shift();
+    startNicknameQuestion();
+    return;
+  }
+  if (queuedLines.length > 0 && queuedLines[0] === '__FINAL_SMILEY__') {
+    queuedLines.shift();
+    showFinalSmiley();
+    return;
+  }
+  _originalAdvance();
+};
+
+/* ============================================================
+   EVENTS
+   ============================================================ */
+vnText.addEventListener('click', (e) => { e.stopPropagation(); advance(); });
+vnText.addEventListener('touchstart', (e) => {
+  e.stopPropagation(); e.preventDefault(); advance();
+}, { passive: false });
+
+windowEl.addEventListener('click', (e) => {
+  if (e.target.classList.contains('choice-btn')) return;
+  if (e.target.id === 'fillInput' || e.target.id === 'fillEnter') return;
+  if (e.target.id === 'nameInput' || e.target.id === 'enterBtn') return;
+  if (choicesEl.classList.contains('active')) return;
+  if (stageFill.style.display === 'block') return;
+  advance();
+});
+
+tapLayer.addEventListener('click', advance);
+tapLayer.addEventListener('touchstart', (e) => { e.preventDefault(); advance(); }, { passive: false });
+
+enterBtn.addEventListener('click', (e) => { e.stopPropagation(); submit(); });
+enterBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault(); e.stopPropagation(); submit();
+}, { passive: false });
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); submit(); }
+});
+
+fillEnter.addEventListener('click', (e) => { e.stopPropagation(); submitFill(); });
+fillEnter.addEventListener('touchstart', (e) => {
+  e.preventDefault(); e.stopPropagation(); submitFill();
+}, { passive: false });
+
+fillInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); submitFill(); }
+});
+
+input.focus();
+</script>
